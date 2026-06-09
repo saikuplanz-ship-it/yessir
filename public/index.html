@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TG Looper</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0f14;--surface:#161920;--surface2:#1d2029;
+  --border:#252932;--accent:#5b8cff;--green:#3dffc0;
+  --danger:#ff4e6a;--warn:#f59e0b;
+  --text:#e8eaf0;--muted:#6b7280;
+  --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);
+  min-height:100vh;display:flex;justify-content:center;padding:32px 16px 80px;}
+.shell{width:100%;max-width:700px;display:flex;flex-direction:column;gap:14px;}
+.hdr{display:flex;align-items:center;gap:10px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+.hdr h1{font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:-0.5px;}
+.badge{font-family:var(--mono);font-size:10px;font-weight:600;
+  color:var(--green);background:rgba(61,255,192,.09);
+  border:1px solid rgba(61,255,192,.22);padding:3px 8px;border-radius:4px;letter-spacing:.5px;}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;}
+.ptitle{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--muted);
+  letter-spacing:1.2px;text-transform:uppercase;margin-bottom:14px;}
+.row{display:flex;gap:10px;margin-bottom:10px;}
+.row:last-child{margin-bottom:0;}
+.field{display:flex;flex-direction:column;gap:5px;flex:1;}
+label{font-size:11px;color:var(--muted);font-family:var(--mono);}
+input[type=text],input[type=password],textarea,select{
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  color:var(--text);font-family:var(--mono);font-size:13px;
+  padding:9px 11px;outline:none;transition:border-color .15s;width:100%;}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);}
+textarea{resize:vertical;min-height:80px;line-height:1.6;}
+select{cursor:pointer;}
+select option{background:var(--surface2);}
+.hint{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:6px;line-height:1.6;}
+.hint a{color:var(--accent);text-decoration:none;}
+.hint a:hover{text-decoration:underline;}
+.btn{font-family:var(--mono);font-size:12px;font-weight:600;
+  padding:9px 16px;border-radius:6px;border:none;cursor:pointer;
+  transition:opacity .15s,transform .1s;white-space:nowrap;}
+.btn:active{transform:scale(.97);}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+.btn-blue{background:var(--accent);color:#fff;}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text);}
+.btn-ghost:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+.btn-red{background:var(--danger);color:#fff;}
+.btn-green{background:#1db96a;color:#fff;}
+.btn-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.slider-block{display:flex;flex-direction:column;gap:8px;}
+.slider-hdr{display:flex;justify-content:space-between;}
+.slider-lbl{font-size:11px;color:var(--muted);font-family:var(--mono);}
+.slider-val{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--green);}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;
+  background:var(--border);border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+  border-radius:50%;background:var(--accent);cursor:pointer;
+  border:2px solid var(--bg);box-shadow:0 0 0 2px var(--accent);}
+.slider-ends{display:flex;justify-content:space-between;margin-top:2px;}
+.slider-ends span{font-family:var(--mono);font-size:10px;color:var(--muted);}
+.slider-ends .mid{color:var(--accent);}
+.chat-list{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;margin-bottom:10px;}
+.chat-item{display:flex;align-items:center;gap:10px;padding:9px 12px;
+  background:var(--bg);border:1px solid var(--border);border-radius:7px;
+  cursor:pointer;transition:border-color .15s;}
+.chat-item:hover{border-color:var(--accent);}
+.chat-item.selected{border-color:var(--green);background:rgba(61,255,192,.05);}
+.chat-avatar{width:34px;height:34px;border-radius:50%;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:13px;font-weight:700;flex-shrink:0;}
+.chat-info{flex:1;min-width:0;}
+.chat-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.chat-type{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px;}
+.chat-check{color:var(--green);font-size:16px;opacity:0;transition:opacity .15s;}
+.chat-item.selected .chat-check{opacity:1;}
+.search-input{margin-bottom:10px;}
+.msg-queue{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;margin-bottom:10px;}
+.msg-item{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;}
+.msg-item.active{border-color:var(--green);background:rgba(61,255,192,.05);}
+.msg-num{font-family:var(--mono);font-size:10px;color:var(--muted);min-width:20px;padding-top:2px;}
+.msg-body{font-family:var(--mono);font-size:13px;flex:1;white-space:pre-wrap;word-break:break-word;line-height:1.5;}
+.msg-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;
+  padding:0 3px;transition:color .1s;font-family:var(--mono);}
+.msg-del:hover{color:var(--danger);}
+.empty{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center;padding:20px 0;}
+.status-bar{display:flex;align-items:center;gap:10px;}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.dot.running{background:var(--green);box-shadow:0 0 7px var(--green);animation:pulse 1s infinite;}
+.dot.stopped{background:var(--danger);}
+.dot.ok{background:var(--green);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.status-txt{font-family:var(--mono);font-size:12px;color:var(--muted);flex:1;}
+.log{background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:10px 12px;max-height:150px;overflow-y:auto;
+  font-family:var(--mono);font-size:11px;line-height:1.8;}
+.ll{display:flex;gap:8px;}
+.lt{color:var(--muted);flex-shrink:0;}
+.lok{color:var(--green);}
+.lerr{color:var(--danger);}
+.linfo{color:var(--accent);}
+.lwarn{color:var(--warn);}
+.session-banner{display:flex;align-items:center;gap:8px;padding:9px 12px;
+  background:rgba(61,255,192,.07);border:1px solid rgba(61,255,192,.2);
+  border-radius:7px;font-family:var(--mono);font-size:11px;color:var(--green);margin-bottom:4px;}
+hr{border:none;border-top:1px solid var(--border);margin:10px 0;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.t-dm{color:#a78bfa;}.t-group{color:var(--accent);}.t-channel{color:var(--warn);}
+.av-dm{background:rgba(167,139,250,.15);color:#a78bfa;}
+.av-group{background:rgba(91,140,255,.15);color:var(--accent);}
+.av-channel{background:rgba(245,158,11,.15);color:var(--warn);}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="hdr">
+    <h1>TG Looper</h1>
+    <span class="badge">USER API</span>
+  </div>
+  <div id="auth-wrap">
+    <div class="session-banner" id="session-banner" style="display:none">
+      ✓ Saved session found — enter your API ID + Hash to resume without re-verifying
+    </div>
+    <div class="panel" id="step1">
+      <div class="ptitle">Connect Account</div>
+      <div class="row">
+        <div class="field">
+          <label>API ID</label>
+          <input type="text" id="api-id" placeholder="12345678" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>API Hash</label>
+          <input type="password" id="api-hash" placeholder="abc123def456..." autocomplete="off">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Phone Number</label>
+          <input type="text" id="phone" placeholder="+1234567890" autocomplete="off">
+        </div>
+      </div>
+      <p class="hint">Get API ID + Hash at <a href="https://my.telegram.org/apps" target="_blank">my.telegram.org/apps</a></p>
+      <div class="btn-row">
+        <button class="btn btn-blue" id="btn-connect">Connect →</button>
+        <button class="btn btn-ghost" id="btn-resume" style="display:none">Resume Session →</button>
+      </div>
+    </div>
+    <div class="panel" id="step2" style="display:none">
+      <div class="ptitle">Enter Login Code</div>
+      <div class="row">
+        <div class="field">
+          <label>Code sent to your Telegram app</label>
+          <input type="text" id="tg-code" placeholder="12345" maxlength="7" autocomplete="off">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-blue" id="btn-code">Submit Code →</button>
+      </div>
+    </div>
+    <div class="panel" id="step3" style="display:none">
+      <div class="ptitle">Two-Factor Password</div>
+      <div class="row">
+        <div class="field">
+          <label>Cloud password</label>
+          <input type="password" id="tg-2fa" placeholder="Your 2FA password" autocomplete="off">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-blue" id="btn-2fa">Confirm →</button>
+      </div>
+    </div>
+  </div>
+  <div id="main" style="display:none;flex-direction:column;gap:14px;">
+    <div class="panel" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="dot ok"></div>
+        <span style="font-family:var(--mono);font-size:12px;color:var(--green);" id="me-label">Connected</span>
+      </div>
+      <button class="btn btn-ghost" id="btn-logout" style="padding:5px 12px;font-size:11px;">Logout</button>
+    </div>
+    <div class="panel">
+      <div class="ptitle">Choose Target</div>
+      <input type="text" class="search-input" id="chat-search" placeholder="Search chats…">
+      <div class="chat-list" id="chat-list">
+        <div class="empty" id="chat-empty">Loading your chats…</div>
+      </div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--muted);" id="selected-label">No chat selected</div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">Message Queue <span style="color:var(--muted);font-size:10px;">(loops in order)</span></div>
+      <div class="msg-queue" id="msg-queue">
+        <div class="empty" id="msg-empty">No messages yet.</div>
+      </div>
+      <hr>
+      <div class="field" style="margin-bottom:8px;">
+        <label>Add message</label>
+        <textarea id="new-msg" placeholder="Type here… Enter to add, Shift+Enter for newline"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost" id="btn-add">+ Add</button>
+        <button class="btn btn-ghost" id="btn-clear" style="margin-left:auto;color:var(--danger);border-color:var(--danger);">Clear All</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">Cooldown Between Messages</div>
+      <div class="slider-block">
+        <div class="slider-hdr">
+          <span class="slider-lbl">Delay</span>
+          <span class="slider-val" id="delay-display">3.0s</span>
+        </div>
+        <input type="range" id="delay-slider" min="1" max="100" value="30">
+        <div class="slider-ends">
+          <span>0.1s</span>
+          <span class="mid">≥ 3s recommended</span>
+          <span>10s</span>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">Controls</div>
+      <div class="status-bar" style="margin-bottom:14px;">
+        <button class="btn btn-green" id="btn-start" style="min-width:110px;">▶ Start</button>
+        <button class="btn btn-red" id="btn-stop" style="min-width:110px;" disabled>■ Stop</button>
+        <div class="dot" id="s-dot"></div>
+        <span class="status-txt" id="s-txt">Idle</span>
+      </div>
+      <hr>
+      <div class="ptitle" style="margin-bottom:8px;">Activity Log</div>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+</div>
+<script>
+const API="";
+const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const $=id=>document.getElementById(id);
+const truncate=(s,n)=>s.length>n?s.slice(0,n)+"…":s;
+function log(type,msg){
+  const t=new Date().toLocaleTimeString("en-US",{hour12:false});
+  const el=document.createElement("div");
+  el.className="ll";
+  el.innerHTML=`<span class="lt">${t}</span><span class="l${type}">${esc(msg)}</span>`;
+  $("log").appendChild(el);
+  $("log").scrollTop=$("log").scrollHeight;
+}
+async function api(method,path,body){
+  const opts={method,headers:{"Content-Type":"application/json"}};
+  if(body)opts.body=JSON.stringify(body);
+  const r=await fetch(API+path,opts);
+  return r.json();
+}
+function saveSession(apiId,apiHash,session){localStorage.setItem("tg_session",JSON.stringify({apiId,apiHash,session}));}
+function loadSession(){try{return JSON.parse(localStorage.getItem("tg_session"));}catch{return null;}}
+function clearSession(){localStorage.removeItem("tg_session");}
+const slider=$("delay-slider");
+const delayDisplay=$("delay-display");
+function sliderVal(){const t=(slider.value-1)/99;return +(0.1+t*t*9.9).toFixed(1);}
+slider.addEventListener("input",()=>{delayDisplay.textContent=sliderVal().toFixed(1)+"s";});
+let allChats=[],selectedChat=null;
+function avatarInitial(name){return(name||"?")[0].toUpperCase();}
+function avatarClass(type){return type==="dm"?"av-dm":type==="group"?"av-group":"av-channel";}
+function typeLabel(type){return type==="dm"?"DM":type==="group"?"Group":"Channel";}
+function typeClass(type){return type==="dm"?"t-dm":type==="group"?"t-group":"t-channel";}
+function renderChats(filter=""){
+  const list=$("chat-list");
+  const filtered=filter?allChats.filter(c=>c.name.toLowerCase().includes(filter.toLowerCase())):allChats;
+  [...list.children].forEach(c=>{if(c.id!=="chat-empty")c.remove();});
+  if(filtered.length===0){$("chat-empty").style.display="";$("chat-empty").textContent=filter?"No chats match.":"No chats found.";return;}
+  $("chat-empty").style.display="none";
+  filtered.forEach(chat=>{
+    const el=document.createElement("div");
+    el.className="chat-item"+(selectedChat?.id===chat.id?" selected":"");
+    el.innerHTML=`<div class="chat-avatar ${avatarClass(chat.type)}">${esc(avatarInitial(chat.name))}</div><div class="chat-info"><div class="chat-name">${esc(chat.name)}</div><div class="chat-type ${typeClass(chat.type)}">${typeLabel(chat.type)}${chat.username?" · @"+chat.username:""}</div></div><span class="chat-check">✓</span>`;
+    el.addEventListener("click",()=>{selectedChat=chat;$("selected-label").textContent="✓ Sending to: "+chat.name;$("selected-label").style.color="var(--green)";renderChats(filter);log("info","Target: "+chat.name);});
+    list.appendChild(el);
+  });
+}
+$("chat-search").addEventListener("input",e=>renderChats(e.target.value));
+let messages=[],looping=false,loopHandle=null,msgIdx=0;
+function renderMessages(){
+  const q=$("msg-queue");
+  [...q.children].forEach(c=>{if(c.id!=="msg-empty")c.remove();});
+  if(messages.length===0){$("msg-empty").style.display="";return;}
+  $("msg-empty").style.display="none";
+  messages.forEach((m,i)=>{
+    const el=document.createElement("div");
+    el.className="msg-item"+(looping&&i===msgIdx%messages.length?" active":"");
+    el.innerHTML=`<span class="msg-num">${String(i+1).padStart(2,"0")}</span><span class="msg-body">${esc(m)}</span><button class="msg-del">✕</button>`;
+    el.querySelector(".msg-del").addEventListener("click",()=>{if(looping)return;messages.splice(i,1);renderMessages();});
+    q.appendChild(el);
+  });
+}
+$("btn-add").addEventListener("click",addMsg);
+$("new-msg").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();addMsg();}});
+function addMsg(){const v=$("new-msg").value.trim();if(!v)return;messages.push(v);$("new-msg").value="";renderMessages();log("info",`Added: "${truncate(v,40)}"`);}
+$("btn-clear").addEventListener("click",()=>{if(looping)return;if(messages.length&&confirm("Clear all messages?")){messages=[];renderMessages();}});
+$("btn-start").addEventListener("click",startLoop);
+$("btn-stop").addEventListener("click",stopLoop);
+function setStatus(state,txt){$("s-dot").className="dot "+state;$("s-txt").textContent=txt;}
+async function startLoop(){
+  if(!selectedChat)return alert("Select a chat first.");
+  if(messages.length===0)return alert("Add at least one message.");
+  looping=true;msgIdx=0;
+  $("btn-start").disabled=true;$("btn-stop").disabled=false;
+  setStatus("running","Running…");
+  log("info",`Loop started → ${selectedChat.name}`);
+  loopStep();
+}
+async function loopStep(){
+  if(!looping)return;
+  const msg=messages[msgIdx%messages.length];
+  renderMessages();
+  try{
+    const res=await api("POST","/api/send",{chatId:selectedChat.id,message:msg});
+    if(res.error)throw new Error(res.error);
+    log("ok",`[${msgIdx+1}] → "${truncate(msg,50)}"`);
+  }catch(e){
+    const txt=e.message||String(e);
+    log("err","Send failed: "+txt);
+    if(txt.includes("FLOOD_WAIT")){
+      const secs=parseInt(txt.match(/\d+/)?.[0]||"30");
+      log("warn",`Rate limited — waiting ${secs}s`);
+      setStatus("running",`Flood wait: ${secs}s…`);
+      loopHandle=setTimeout(loopStep,secs*1000);
+      return;
+    }
+  }
+  msgIdx++;
+  const delay=sliderVal()*1000;
+  loopHandle=setTimeout(()=>{if(looping)loopStep();},delay);
+}
+function stopLoop(){
+  looping=false;if(loopHandle)clearTimeout(loopHandle);
+  $("btn-start").disabled=false;$("btn-stop").disabled=true;
+  setStatus("stopped","Stopped");log("warn","Loop stopped.");renderMessages();
+}
+function showStep(n){$("step1").style.display=n===1?"":"none";$("step2").style.display=n===2?"":"none";$("step3").style.display=n===3?"":"none";}
+window.addEventListener("load",()=>{
+  const saved=loadSession();
+  if(saved){$("session-banner").style.display="";$("btn-resume").style.display="";$("api-id").value=saved.apiId||"";$("api-hash").value=saved.apiHash||"";}
+  showStep(1);
+});
+$("btn-connect").addEventListener("click",async()=>{
+  const apiId=$("api-id").value.trim();
+  const apiHash=$("api-hash").value.trim();
+  const phone=$("phone").value.trim();
+  if(!apiId||!apiHash||!phone)return alert("Fill in all three fields.");
+  $("btn-connect").disabled=true;$("btn-connect").textContent="Connecting…";
+  log("info","Connecting…");
+  try{
+    const res=await api("POST","/api/login",{apiId,apiHash,phone});
+    if(res.error)throw new Error(res.error);
+    if(res.step==="code"){
+      showStep(2);
+      log("info","Code sent to your Telegram app.");
+    }else{
+      showStep(2);
+      log("info","Code step opened.");
+    }
+  }catch(e){log("err",e.message);alert("Error: "+e.message);}
+  $("btn-connect").disabled=false;$("btn-connect").textContent="Connect →";
+});
+$("btn-resume").addEventListener("click",async()=>{
+  const saved=loadSession();if(!saved)return;
+  $("btn-resume").disabled=true;$("btn-resume").textContent="Resuming…";
+  log("info","Resuming saved session…");
+  try{
+    const res=await api("POST","/api/resume",saved);
+    if(res.error)throw new Error(res.error);
+    await onAuthed(res);
+  }catch(e){log("err","Resume failed: "+e.message);clearSession();$("session-banner").style.display="none";$("btn-resume").style.display="none";}
+  $("btn-resume").disabled=false;$("btn-resume").textContent="Resume Session →";
+});
+$("btn-code").addEventListener("click",async()=>{
+  const code=$("tg-code").value.trim();if(!code)return alert("Enter the code.");
+  $("btn-code").disabled=true;$("btn-code").textContent="Verifying…";
+  try{
+    const res=await api("POST","/api/submit-code",{
+      apiId:$("api-id").value.trim(),
+      apiHash:$("api-hash").value.trim(),
+      phone:$("phone").value.trim(),
+      code
+    });
+    if(res.error)throw new Error(res.error);
+    if(res.step==="2fa"){
+      showStep(3);
+      log("info","2FA required.");
+    }else{
+      await onAuthed(res);
+    }
+  }catch(e){log("err",e.message);alert("Error: "+e.message);}
+  $("btn-code").disabled=false;$("btn-code").textContent="Submit Code →";
+});
+$("btn-2fa").addEventListener("click",async()=>{
+  const pwd=$("tg-2fa").value;if(!pwd)return alert("Enter your 2FA password.");
+  $("btn-2fa").disabled=true;$("btn-2fa").textContent="Verifying…";
+  try{
+    const res=await api("POST","/api/submit-password",{password:pwd});
+    if(res.error)throw new Error(res.error);
+    await onAuthed(res);
+  }catch(e){log("err",e.message);alert("Error: "+e.message);}
+  $("btn-2fa").disabled=false;$("btn-2fa").textContent="Confirm →";
+});
+async function onAuthed(data){
+  saveSession($("api-id").value,$("api-hash").value,"saved");
+  $("auth-wrap").style.display="none";
+  $("main").style.display="flex";
+  $("me-label").textContent=`Connected · ${data.name} (+${data.phone})`;
+  log("ok",`Authenticated as ${data.name}`);
+  setStatus("","Idle");
+  log("info","Loading chats…");
+  const d=await api("GET","/api/chats");
+  if(d.error){log("err","Couldn't load chats: "+d.error);return;}
+  allChats=d.chats;
+  renderChats();
+  log("ok",`Loaded ${allChats.length} chats`);
+}
+$("btn-logout").addEventListener("click",async()=>{
+  stopLoop();
+  await api("POST","/api/logout");
+  clearSession();
+  location.reload();
+});
+</script>
+</body>
+</html>
